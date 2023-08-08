@@ -93,14 +93,27 @@
 // buzzer pin
 const int buzzer = 9;
 
-int songProgressoin = 0;
+int songProgression = 0;
+int totalDuration = 0;
 int songDuration = 0;
 int noteAmount = 0;
 int notes[] = {
-  NOTE_D8, 4,
-  NOTE_D6, 6, 
-  NOTE_D6, 6,
-  NOTE_D6, 6
+  NOTE_F5, 6,
+  NOTE_G5, 6, 
+  NOTE_C5, 4,
+  NOTE_G5, 6,
+  NOTE_A5, 6,
+  NOTE_C6, 1,
+  NOTE_AS5, 1,
+  NOTE_A5, 2,
+  NOTE_F5, 6,
+  NOTE_G5, 6,
+  NOTE_C5, 14,
+  NOTE_C5, 1,
+  NOTE_C5, 1,
+  NOTE_D5, 1,
+  NOTE_F5, 2,
+  NOTE_F5, 1
 };
 
 
@@ -114,11 +127,30 @@ void setup()
 
 void loop()
 {
+  playSong(notes, 100, songDuration, noteAmount, &songProgression, &totalDuration);
   delay(25); // Wait for 1000 millisecond(s)
 }
 
-void playSong() {
-   
+void playSong(int song[], int speed, int duration, int noteAmount, int *songProgression, int *totalDuration) {
+  int time = millis() % (duration * speed);
+  
+  tone(buzzer, song[*songProgression*2]);
+  //Serial.println(*totalDuration);
+  if (time > *totalDuration + song[*songProgression*2+1] * speed) {
+    noTone(buzzer);
+    
+    Serial.println(*totalDuration + song[*songProgression*2+1] * speed);
+    *totalDuration += song[*songProgression*2+1] * speed;
+    *songProgression += 1;
+    Serial.println(*songProgression);
+    Serial.println(time);
+  }
+  if (time < *totalDuration/2) {
+      *songProgression = 0; 
+      *totalDuration = 0;
+      Serial.println(*totalDuration + song[*songProgression*2+1] * speed);
+      Serial.println(*songProgression);
+  }
 }
 
 void getSongData(int song[], int *noteAmount, int *songDuration, int songLength) {
