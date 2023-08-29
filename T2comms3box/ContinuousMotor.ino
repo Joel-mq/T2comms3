@@ -10,7 +10,6 @@ Servo servo1;
   // Servo Constants //
   const int still = 1500;		    // IN MILISECONDS;
   const int fullSpeed = 2000;		// IN MILISECONDS;
-  int pos = 1500;               // Current Position
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
