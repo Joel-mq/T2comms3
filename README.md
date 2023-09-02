@@ -1,3 +1,2 @@
-# T2comms3
+# T2comms3 Box code for Arduino
 
-# GAB
