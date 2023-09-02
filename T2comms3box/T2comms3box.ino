@@ -1,3 +1,6 @@
+#include <Servo.h>
+#include <Adafruit_NeoPixel.h>
+
 // buzzer
 #define NOTE_B0  31
 #define NOTE_C1  33
@@ -91,7 +94,34 @@
 #define REST      0
 
 // buzzer pin
-const int buzzer = 9;
+const int buzzerPin = 9;
+bool buzzerOn = false;
+
+// Servos
+Servo wheelMotor;
+Servo corkscrewMotor;
+
+const int wheelMotorPin = 8;
+const int corkscrewMotorPin = 7;
+
+// button : PhotoResistor
+const int photoresistorPin = A0;
+int highestLightValue = 0;
+const int pressCooldown = 500;
+int pressCoolingdown = 0;
+int prevMillis = 0;
+
+
+// Lights
+
+const int NUM_PIXELS = 24;
+const int NEOPIXEL_PIN = 6;
+Adafruit_NeoPixel NeoPixel(NUM_PIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+int patternProgress = 0;
+const int patternLimit = 80;
+const int patternDelay = 10;
+int patternReset = 0;
 
 int songProgression = 0;
 int totalDuration = 0;
@@ -116,40 +146,148 @@ int notes[] = {
   NOTE_F5, 1
 };
 
+int rickroll[] = {
+  NOTE_F5, 6, NOTE_G5, 6, NOTE_C5, 4, NOTE_G5, 6, NOTE_A5, 6, NOTE_C6, 1, NOTE_AS5, 1, NOTE_A5, 2, NOTE_F5, 6, NOTE_G5, 6, NOTE_C5, 14, NOTE_C5, 1, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 2, NOTE_F5, 1, NOTE_F5, 6, NOTE_G5, 6, NOTE_C5, 4, NOTE_G5, 6, NOTE_A5, 6, NOTE_C6, 1, NOTE_AS5, 1, NOTE_A5, 2, NOTE_F5, 6, NOTE_G5, 6, NOTE_C5, 14, NOTE_C5, 1, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 2, NOTE_F5, 5, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 16, NOTE_D5, 2, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 4, NOTE_C5, 2, NOTE_C6, 4, NOTE_C6, 2, NOTE_G5, 10, NOTE_D5, 2, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_F5, 2, NOTE_G5, 6, NOTE_E5, 2, NOTE_D5, 2, NOTE_C5, 12, NOTE_D5, 2, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_C5, 4, NOTE_G5, 2, NOTE_G5, 2, NOTE_G5, 2, NOTE_A5, 2, NOTE_G5, 8, NOTE_F5, 10, NOTE_G5, 2, NOTE_A5, 2, NOTE_F5, 2, NOTE_G5, 2, NOTE_G5, 2, NOTE_G5, 2, NOTE_A5, 2, NOTE_G5, 4, NOTE_C5, 12, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 4, NOTE_G5, 2, NOTE_A5, 2, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_A5, 3, NOTE_A5, 3, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_G5, 3, NOTE_G5, 3, NOTE_F5, 3, NOTE_E5, 1, NOTE_D5, 2, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_F5, 4, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 2, NOTE_C5, 2, NOTE_C5, 2, NOTE_G5, 4, NOTE_F5, 8, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_A5, 3, NOTE_A5, 3, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_C6, 4, NOTE_E5, 2, NOTE_F5, 3, NOTE_E5, 1, NOTE_D5, 2, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_F5, 4, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 4, NOTE_C5, 2, NOTE_G5, 4, NOTE_F5, 14, NOTE_D5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_F5, 2, NOTE_G5, 8, NOTE_E5, 2, NOTE_D5, 2, NOTE_C5, 12, NOTE_D5, 2, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_C5, 6, NOTE_C6, 2, NOTE_C6, 2, NOTE_G5, 4, NOTE_A5, 2, NOTE_G5, 2, NOTE_F5, 4, NOTE_D5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_F5, 2, NOTE_G5, 4, NOTE_E5, 2, NOTE_D5, 2, NOTE_C5, 10, NOTE_D5, 2, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 2, NOTE_C5, 8, NOTE_G5, 2, NOTE_G5, 2, NOTE_A5, 4, NOTE_G5, 6, NOTE_F5, 10, NOTE_G5, 2, NOTE_A5, 2, NOTE_G5, 4, NOTE_G5, 2, NOTE_G5, 2, NOTE_A5, 2, NOTE_G5, 2, NOTE_C5, 2, NOTE_C5, 10, NOTE_C5, 2, NOTE_D5, 2, NOTE_E5, 2, NOTE_F5, 2, NOTE_D5, 4, NOTE_G5, 2, NOTE_A5, 2, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_A5, 3, NOTE_A5, 3, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_G5, 3, NOTE_G5, 3, NOTE_F5, 3, NOTE_E5, 1, NOTE_D5, 2, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_F5, 4, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 4, NOTE_C5, 2, NOTE_G5, 4, NOTE_F5, 8, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_A5, 3, NOTE_A5, 3, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_C6, 4, NOTE_E5, 2, NOTE_F5, 3, NOTE_E5, 1, NOTE_D5, 2, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_F5, 4, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 4, NOTE_C5, 2, NOTE_G5, 4, NOTE_F5, 8, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_A5, 3, NOTE_A5, 3, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_G5, 3, NOTE_G5, 3, NOTE_F5, 3, NOTE_E5, 1, NOTE_D5, 2, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_F5, 4, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 2, NOTE_C5, 2, NOTE_C5, 2, NOTE_G5, 4, NOTE_F5, 8, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_A5, 3, NOTE_A5, 3, NOTE_G5, 6, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_G5, 3, NOTE_G5, 3, NOTE_F5, 3, NOTE_E5, 1, NOTE_D5, 2, NOTE_C5, 1, NOTE_D5, 1, NOTE_F5, 1, NOTE_D5, 1, NOTE_F5, 4, NOTE_G5, 2, NOTE_E5, 3, NOTE_D5, 1, NOTE_C5, 4, NOTE_C5, 2, NOTE_G5, 4, NOTE_F5, 26
+};
+
+//int desp[] = {
+//  NOTE_B4, 5, NOTE_FS4, 1, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_E5, 2, NOTE_D5, 1, NOTE_CS5, 1, NOTE_B4, 2, NOTE_A4, 1, NOTE_G4, 3, NOTE_D5, 3, NOTE_D5, 10, NOTE_D5, 2, NOTE_A4, 2, NOTE_D5, 2, NOTE_A4, 2, NOTE_D5, 2, NOTE_A4, 2, NOTE_D5, 2, NOTE_E5, 1, NOTE_CS5, 17, NOTE_B4, 5, NOTE_FS4, 1, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_E5, 2, NOTE_D5, 1, NOTE_CS5, 1, NOTE_B4, 2, NOTE_A4, 1, NOTE_G4, 3, NOTE_D5, 3, NOTE_E5, 2, NOTE_D5, 8, NOTE_D5, 2, NOTE_A4, 2, NOTE_D5, 2, NOTE_A4, 2, NOTE_D5, 2, NOTE_A4, 2, NOTE_D5, 2, NOTE_E5, 1, NOTE_CS5, 17, NOTE_B4, 4, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 2, NOTE_CS5, 1, NOTE_D5, 2, NOTE_CS5, 1, NOTE_B4, 4, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 2, NOTE_CS5, 1, NOTE_D5, 2, NOTE_E5, 1, NOTE_A4, 4, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_D5, 1, NOTE_A4, 2, NOTE_D5, 1, NOTE_A4, 1, NOTE_D5, 1, NOTE_E5, 1, NOTE_E5, 2, NOTE_CS5, 15, NOTE_B4, 4, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 2, NOTE_D5, 2, NOTE_CS5, 1, NOTE_B4, 4, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 2, NOTE_E5, 1, NOTE_A4, 5, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_D5, 2, NOTE_E5, 1, NOTE_E5, 2, NOTE_CS5, 7, NOTE_D5, 4, NOTE_CS5, 4, NOTE_B4, 2, NOTE_FS4, 2, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 2, NOTE_A4, 1, NOTE_B4, 2, NOTE_B4, 1, NOTE_G4, 2, NOTE_G4, 1, NOTE_G4, 1, NOTE_G4, 1, NOTE_G4, 1, NOTE_G4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 2, NOTE_CS5, 1, NOTE_D5, 2, NOTE_A4, 3, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 2, NOTE_E5, 1, NOTE_E5, 1, NOTE_E5, 1, NOTE_CS5, 7, NOTE_D5, 4, NOTE_CS5, 4, NOTE_B4, 2, NOTE_FS4, 2, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_FS4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 2, NOTE_A4, 1, NOTE_B4, 2, NOTE_B4, 1, NOTE_G4, 2, NOTE_G4, 1, NOTE_G4, 1, NOTE_G4, 1, NOTE_G4, 1, NOTE_G4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 1, NOTE_B4, 2, NOTE_CS5, 1, NOTE_D5, 2, NOTE_A4, 3, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_A4, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_E5, 2, NOTE_E5, 2, NOTE_CS5, 15, NOTE_FS5, 1, NOTE_E5, 1, NOTE_FS5, 1, NOTE_E5, 1, NOTE_FS5, 1, NOTE_E5, 2, NOTE_FS5, 2, NOTE_E5, 1, NOTE_FS5, 1, NOTE_E5, 2, NOTE_FS5, 2, NOTE_G5, 1, NOTE_G5, 2, NOTE_D5, 6, NOTE_G5, 1, NOTE_G5, 1, NOTE_G5, 1, NOTE_G5, 2, NOTE_G5, 1, NOTE_A5, 1, NOTE_A5, 2, NOTE_FS5, 7, NOTE_FS5, 1, NOTE_FS5, 1, NOTE_FS5, 1, NOTE_FS5, 2, NOTE_A5, 1, NOTE_G5, 1, NOTE_FS5, 2, NOTE_E5, 15, NOTE_FS5, 1, NOTE_E5, 1, NOTE_FS5, 1, NOTE_E5, 1, NOTE_FS5, 1, NOTE_E5, 1, NOTE_FS5, 3, NOTE_E5, 2, NOTE_FS5, 1, NOTE_E5, 1, NOTE_FS5, 2, NOTE_G5, 1, NOTE_G5, 2, NOTE_D5, 6, NOTE_G5, 1, NOTE_G5, 1, NOTE_G5, 1, NOTE_G5, 1, NOTE_G5, 2, NOTE_A5, 1, NOTE_A5, 2, NOTE_FS5, 7, NOTE_FS5, 1, NOTE_FS5, 1, NOTE_FS5, 1, NOTE_FS5, 2, NOTE_A5, 1, NOTE_G5, 1, NOTE_FS5, 2, NOTE_E5, 8, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_D5, 1, NOTE_B4, 1, NOTE_D5, 1, NOTE_B4, 2, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_B4, 1, NOTE_D5, 1, NOTE_B4, 2, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_B4, 1, NOTE_D5, 1, NOTE_B4, 2, NOTE_B4, 1, NOTE_CS5, 1, NOTE_D5, 1, NOTE_CS5, 1, NOTE_B4, 1, NOTE_D5, 1, NOTE_B4, 3, NOTE_E5, 1, NOTE_E5, 1, NOTE_E5, 1, NOTE_D5, 1, NOTE_E5, 1, NOTE_E5, 1
+//};
+
+//int faded[] {
+//	NOTE_FS4, 4, NOTE_FS4, 4, NOTE_FS4, 4, NOTE_AS4, 4, NOTE_DS5, 4, NOTE_DS5, 4, NOTE_DS5, 4, NOTE_CS5, 4, NOTE_AS4, 4, NOTE_AS4, 4, NOTE_AS4, 4, NOTE_AS4, 4, NOTE_F4, 4, NOTE_F4, 4, NOTE_F4, 4, NOTE_F4, 4, NOTE_FS4, 4, NOTE_FS4, 4, NOTE_FS4, 4, NOTE_AS4, 4, NOTE_DS5, 4, NOTE_DS5, 4, NOTE_DS5, 4, NOTE_CS5, 4, NOTE_AS4, 4, NOTE_AS4, 4, NOTE_AS4, 4, NOTE_AS4, 4, NOTE_F4, 4, NOTE_F4, 4, NOTE_F4, 4, NOTE_F4, 4, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_CS6, 2, NOTE_CS6, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_CS6, 2, NOTE_CS6, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_CS6, 2, NOTE_CS6, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_FS5, 4, NOTE_FS5, 4, NOTE_FS5, 4, NOTE_AS5, 4, NOTE_DS6, 4, NOTE_DS6, 4, NOTE_DS6, 4, NOTE_CS6, 4, NOTE_AS5, 4, NOTE_AS5, 4, NOTE_AS5, 4, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 6, NOTE_FS5, 4, NOTE_FS5, 4, NOTE_FS5, 4, NOTE_AS5, 4, NOTE_DS6, 4, NOTE_DS6, 4, NOTE_DS6, 4, NOTE_CS6, 4, NOTE_AS5, 4, NOTE_AS5, 4, NOTE_AS5, 4, NOTE_AS5, 4, NOTE_F5, 4, NOTE_F5, 4, NOTE_F5, 4, NOTE_F5, 8, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_CS6, 1, NOTE_CS6, 1, NOTE_CS6, 1, NOTE_CS6, 1, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 1, NOTE_F5, 1, NOTE_F5, 1, NOTE_F5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_CS6, 1, NOTE_CS6, 1, NOTE_CS6, 1, NOTE_CS6, 1, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 3, NOTE_F5, 2, NOTE_F5, 1, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_DS6, 2, NOTE_CS6, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 2, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_AS5, 1, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 2, NOTE_F5, 3, NOTE_F5, 2, NOTE_F5, 1, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2, NOTE_FS5, 2
+//};
 
 void setup()
 {
   Serial.begin(9600);
-  pinMode(buzzer, OUTPUT);
-  pinMode(3, OUTPUT);
-  getSongData(notes, &noteAmount, &songDuration, sizeof(notes) / sizeof(notes[0]));
+  
+  // neopixel strip
+  NeoPixel.begin();
+  
+  // Servos
+  wheelMotor.attach(wheelMotorPin);
+  corkscrewMotor.attach(corkscrewMotorPin);
+  
+  // Photoresistor
+  pinMode(photoresistorPin, INPUT);
+  
+  // Buzzer
+  pinMode(buzzerPin, OUTPUT);
+  getSongData(rickroll, &noteAmount, &songDuration, sizeof(rickroll) / sizeof(rickroll[0]));
+  //getSongData(faded, &noteAmount, &songDuration, sizeof(faded) / sizeof(faded[0]));
 }
 
 void loop()
 {
-  playSong(notes, 100, songDuration, noteAmount, &songProgression, &totalDuration);
-  delay(25); // Wait for 1000 millisecond(s)
+  rotateWheelMotor();
+  rotateCorkscrewMotor();
+  button();
+  lightLogic();
+  
+  playSong(rickroll, 100, songDuration, noteAmount, &songProgression, &totalDuration);
+  prevMillis = millis();
+  delay(50);
 }
+
+void rotateWheelMotor() {
+  wheelMotor.writeMicroseconds(2000);
+}
+
+void rotateCorkscrewMotor() {
+  corkscrewMotor.writeMicroseconds(2000);
+}
+
+void button() {
+  int analogValue = analogRead(photoresistorPin);
+  
+  if (analogValue > highestLightValue && pressCoolingdown <= 0) {
+  	highestLightValue = analogRead(photoresistorPin);
+    //Serial.println(highestLightValue);
+  }
+  if (analogValue < highestLightValue/4) {
+  	buzzerOn = !buzzerOn;
+    highestLightValue = 0;
+    pressCoolingdown = pressCooldown;
+  }
+  if (pressCoolingdown > 0) {
+    if (prevMillis < millis()) {
+      pressCoolingdown -= millis() - prevMillis;
+      //Serial.println(pressCoolingdown);
+    } else {
+      pressCoolingdown -= 1;
+    }
+  }
+}
+
+void lightLogic() {
+  if (patternReset <= 0) {
+  	patternReset = patternDelay;
+    
+    patternProgress += (millis() - prevMillis)/patternDelay;
+    Serial.println(patternProgress);
+    
+    if (patternProgress >= patternLimit) {
+   	  patternProgress = 0; 
+    }
+  }
+  if (patternReset > 0) {
+    if (prevMillis < millis()) {
+      patternReset -= millis() - prevMillis;
+      //Serial.println(pressCoolingdown);
+    } else {
+      patternReset -= 1;
+    }
+  }
+  
+  if (true) {
+    lightsActive();
+  } else {
+  	lightsIdle(); 
+  }
+}
+
+void sensor() {
+  
+}
+
+void lightsActive() {
+  for (int i = 0; i < NUM_PIXELS; i++) {
+    float pattern = (patternProgress+i*10) % patternLimit;
+    float math = min(patternLimit, abs(patternLimit/2-pattern));
+    NeoPixel.setPixelColor(i, NeoPixel.Color(255*math/(patternLimit/2), 0, 255-255*math/(patternLimit/2)));
+      
+  }
+  NeoPixel.setBrightness(255);
+  NeoPixel.show();                      
+}
+
+void lightsIdle() {
+  
+}
+
 
 void playSong(int song[], int speed, int duration, int noteAmount, int *songProgression, int *totalDuration) {
   int time = millis() % (duration * speed);
   
-  tone(buzzer, song[*songProgression*2]);
+  if (buzzerOn) {
+  	tone(buzzerPin, song[*songProgression*2]);
+  }
   //Serial.println(*totalDuration);
   if (time > *totalDuration + song[*songProgression*2+1] * speed) {
-    noTone(buzzer);
+    noTone(buzzerPin);
     
-    Serial.println(*totalDuration + song[*songProgression*2+1] * speed);
+    //Serial.println(*totalDuration + song[*songProgression*2+1] * speed);
     *totalDuration += song[*songProgression*2+1] * speed;
     *songProgression += 1;
-    Serial.println(*songProgression);
-    Serial.println(time);
+    //Serial.println(*songProgression);
+    //Serial.println(time);
   }
   if (time < *totalDuration/2) {
       *songProgression = 0; 
       *totalDuration = 0;
-      Serial.println(*totalDuration + song[*songProgression*2+1] * speed);
-      Serial.println(*songProgression);
+      //Serial.println(*totalDuration + song[*songProgression*2+1] * speed);
+      //Serial.println(*songProgression);
   }
 }
 
@@ -158,8 +296,8 @@ void getSongData(int song[], int *noteAmount, int *songDuration, int songLength)
   for (int i = 0; i < *noteAmount; i++) {
     *songDuration += song[i*2+1];
   }
-  Serial.print("Song duration: ");
-  Serial.println(*songDuration);
-  Serial.print("Note Length: ");
-  Serial.println(*noteAmount);
+  //Serial.print("Song duration: ");
+  //Serial.println(*songDuration);
+  //Serial.print("Note Length: ");
+  //Serial.println(*noteAmount);
 }
