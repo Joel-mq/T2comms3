@@ -7,55 +7,56 @@ const int buttonPin = 4;
 /* Servo Details */
 Servo wheelServo;
 
-  // Servo Constants //
-  const int still = 1500;		    // IN MILISECONDS;
-  const int fullSpeed = 2000;		// IN MILISECONDS;
-  bool halt;
+// Servo Constants
+const int still = 1500;     // IN MILISECONDS;
+const int fullSpeed = 2000; // IN MILISECONDS;
 
-///////////////////////////////////////////////////////////////////////////////////////
+// Button states
+int lastButtonState = HIGH; // Last state of the button
+int buttonState = HIGH;     // Current state of the button
+
+// Modes
+int wheelMode = 0; // 0 for stopped, 1 for started
 
 void setup() {
-  wheelServo.attach(servoPin); 	    // Servo pin attach
+  wheelServo.attach(servoPin);  // Servo pin attach
   pinMode(buttonPin, INPUT);    // Button pin attach
- 
- /* Begin tickrate 9600 for console */
+
+  // Begin tickrate 9600 for console
   Serial.begin(9600);
 }
 
-///////////////////////////////////////////////////////////////////////////////////////
-
 void loop() {
+  // Read current button state
+  buttonState = digitalRead(buttonPin);
 
-  /* If button Pressed */
-  if(digitalRead(buttonPin) == HIGH) {                                        // CHANGE TO IF PHOTORESISTER HAS NO LIGHT //
-    
-    halt = true;
-    
-    /* Debug */ 
-    Serial.println("BUTTON: Received");
-
-    /* Go Full speed (2000) */
-    stopWheel();
-    delay(30);
-    
-    
+  // Check for button press
+  if (lastButtonState == HIGH && buttonState == LOW) {
+    wheelMode++; // Increment mode
+    if (wheelMode > 1) { // Wrap around after 2
+      wheelMode = 0;
+    }
   }
 
-  /* If button isn't pressed */
-  if(digitalRead(buttonPin) == LOW) {	                                        // CHANGE TO IF PHOTORESISTER HAS LIGHT //
-    
-    /* Debug */
-    Serial.println("BUTTON: Awaiting input");
-    
-    /* Stay still (1500) */
-    startWheel();
+  // Action based on mode
+  switch (wheelMode) {
+    case 0:
+      startWheel();
+      Serial.println("BUTTON: Started");
+      break;
+    case 1:
+      stopWheel();
+      Serial.println("BUTTON: Stopped");
+      break;
   }
-  delay(30);
 
+  // Save current button state for next iteration
+  lastButtonState = buttonState;
+
+  delay(30); // Debounce delay
 }
 
 // FUNCTIONS
-
 void stopWheel() {
   wheelServo.writeMicroseconds(still);
   delay(30);
@@ -65,5 +66,4 @@ void startWheel() {
   wheelServo.writeMicroseconds(fullSpeed);
   delay(30);
 }
-
 
