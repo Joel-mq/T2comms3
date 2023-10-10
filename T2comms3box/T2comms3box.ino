@@ -129,7 +129,7 @@ Adafruit_NeoPixel NeoPixel(NUM_PIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 int patternProgress = 0;
 const int patternLimit = 150;
-const int patternDelay = 5;
+const int patternDelay = 3;
 int patternReset = 0;
 bool lightsOn = false;
 
@@ -184,7 +184,7 @@ void setup()
   pinMode(photoresistorPin, INPUT);
   
   // Sensors
-  pinMode(sensorBottom, INPUT);
+  pinMode(sensorBottom, INPUT_PULLUP);
   pinMode(sensorTop, INPUT);
   
   
@@ -264,9 +264,8 @@ void lightLogic() {
   }
   
   if (lightsOn) {
-    lightsActive();
+    lightsIdle();
   } else {
-  	//lightsIdle(); 
     lightsActive();
   }
 }
@@ -283,16 +282,23 @@ void sensor() {
   if (!digitalRead(sensorTop) && !sensorTopDetect) {
   	sensorTopDetect = true;
     lightsOn = true;
-    lightDuration = 500;
+    lightDuration = 1500;
+    patternProgress = 0;
+  }
+
+  if (!digitalRead(sensorTop)) {
+    Serial.println("something there");
   }
   
   if (lightDuration > 0) {
    	lightDuration -= millis() - prevMillis;
   }
   
-  if (sensorTopDetect && lightDuration <= 0) {
+  if (lightDuration <= 0) {
     lightsOn = false;
     sensorTopDetect = false;
+  } else {
+    lightsOn = true;
   }
 }
 
