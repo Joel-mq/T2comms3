@@ -126,6 +126,8 @@ int lightDuration = 0;
 const int NUM_PIXELS = 15;
 const int NEOPIXEL_PIN = 6;
 Adafruit_NeoPixel NeoPixel(NUM_PIXELS, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+unsigned long lightUpdateDelay = 200;
+unsigned long lightUpdateCounter;
 
 int patternProgress = 0;
 const int patternLimit = 150;
@@ -271,6 +273,7 @@ void lightLogic() {
 }
 
 void sensor() {
+  lightUpdateCounter += millis() - prevMillis;
   if (!digitalRead(sensorBottom) && !sensorBottomDetect) {
   	sensorBottomDetect = true;
   }
@@ -309,8 +312,12 @@ void lightsActive() {
     NeoPixel.setPixelColor(i, NeoPixel.Color(255*math/(patternLimit/2), 0, 255-255*math/(patternLimit/2)));
       
   }
-  NeoPixel.setBrightness(255);
-  NeoPixel.show();                      
+
+  if (lightUpdateCounter > lightUpdateDelay) {
+    lightUpdateCounter -= lightUpdateDelay;
+    NeoPixel.setBrightness(255);
+    NeoPixel.show();           
+  }           
 }
 
 void lightsIdle() {
@@ -320,8 +327,11 @@ void lightsIdle() {
     NeoPixel.setPixelColor(i, NeoPixel.Color(0, 255*math/(patternLimit/2), 255-255*math/(patternLimit/2)));
       
   }
-  NeoPixel.setBrightness(255);
-  NeoPixel.show();   
+  if (lightUpdateCounter > lightUpdateDelay) {
+    lightUpdateCounter -= lightUpdateDelay;
+    NeoPixel.setBrightness(255);
+    NeoPixel.show();   
+  }
 }
 
 
