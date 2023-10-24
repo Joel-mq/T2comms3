@@ -187,7 +187,7 @@ void setup()
   
   // Sensors
   pinMode(sensorBottom, INPUT_PULLUP);
-  pinMode(sensorTop, INPUT);
+  pinMode(sensorTop, INPUT_PULLUP);
   
   
   // Buzzer
@@ -290,7 +290,11 @@ void sensor() {
   }
 
   if (!digitalRead(sensorTop)) {
-    Serial.println("something there");
+    Serial.println("beam broken TOP");
+  }
+
+   if (!digitalRead(sensorBottom)) {
+    Serial.println("beam broken BOT");
   }
   
   if (lightDuration > 0) {
