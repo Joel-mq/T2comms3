@@ -96,6 +96,9 @@
 // buzzer pin
 const int buzzerPin = 9;
 bool buzzerOn = false;
+unsigned long wheelTimer = 0;
+unsigned long wheelTimerLimit = 200;
+boolean rotateWheel = true;
 
 // Servos
 Servo wheelMotor;
@@ -210,11 +213,25 @@ void loop()
 }
 
 void rotateWheelMotor() {
-  wheelMotor.writeMicroseconds(2000);
+  if (wheelTimer > wheelTimerLimit) {
+    rotateWheel = !rotateWheel;
+    wheelTimer -= wheelTimerLimit;
+  }
+  wheelTimer += millis() - prevMillis;
+  if (rotateWheel) {
+    wheelMotor.writeMicroseconds(1400);
+  } else {
+    wheelMotor.writeMicroseconds(1500);
+  }
 }
 
 void rotateCorkscrewMotor() {
-  corkscrewMotor.writeMicroseconds(2000);
+  if (rotateWheel) {
+    corkscrewMotor.writeMicroseconds(1300);
+  } else {
+    corkscrewMotor.writeMicroseconds(1500);
+  }
+  
 }
 
 void button() {
